@@ -45,3 +45,7 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Ignore tmp directory
+/tmp
+!/tmp/.gitkeep
