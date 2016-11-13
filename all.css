@@ -1,0 +1,17 @@
+/*
+ * DokuWiki Plugin HyperLink;
+ */
+a.openwindow {
+    color: #03c;
+    transition: 0.5s;
+}
+a.openwindow:hover {
+    color: #39f;
+}
+a.openwindow:after {
+    padding: 0 2px;
+    content: "⤴";
+    font-size: 80%;
+    vertical-align: text-top;
+}
+
