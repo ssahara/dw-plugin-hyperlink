@@ -1,0 +1,7 @@
+base  hyperlink
+name  HyperLink syntax
+author Satoshi Sahara
+email  sahara.satoshi@gmail.com
+date   2016-11-10
+desc   allow link text formattable.
+url    https://github.com/ssahara/dw-plugin-hyperlink
