@@ -22,12 +22,12 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
 
     function __construct() {
         $this->mode = substr(get_class($this), 7);
-        $this->pattern = '\[[^\r\n]+\]\([^\r\n]*?(?:[ \t]?"[^\r\n]*?")?[ \t]*\)';
+        $this->pattern = '\[[^\r\n]+\]\([^\r\n]*?(?: ?"[^\r\n]*?")?\)';
     }
 
     function getType()  { return 'substition'; }
     function getPType() { return 'normal'; }
-    function getSort()  { return 301; }
+    function getSort()  { return 301; } // cf. Doku_Parser_Mode_internallink(=300)
 
     /**
      * Connect pattern to lexer
@@ -93,9 +93,9 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
 
         // abbreviation if url does not given
         if (empty($url)) {
-                if (empty($title)) $title = $text;
-                $renderer->doc .= '<abbr title="'.hsc($title).'">'.hsc($text).'</abbr>';
-                return true;
+            if (empty($title)) $title = $text;
+            $renderer->doc .= '<abbr title="'.hsc($title).'">'.hsc($text).'</abbr>';
+            return true;
         }
 
         // prepare link format
