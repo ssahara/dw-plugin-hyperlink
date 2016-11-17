@@ -20,11 +20,13 @@ class syntax_plugin_hyperlink_external extends DokuWiki_Syntax_Plugin {
     function __construct() {
         $this->mode = substr(get_class($this), 7);
 
-        // domain name vailidation
-        $domain = '(?:[a-zA-Z0-9][a-zA-Z0-9\-]{0,62}[A-Za-z0-9]\.)+(?:[A-Za-z]+)(?::\d+)?';
+        // url vailidation, ignore query and fragment component
+        $domain = '(?:[a-zA-Z0-9][a-zA-Z0-9\-]{0,62}[A-Za-z0-9]\.)+(?:[A-Za-z]+)';
+        $port   = '(?::\d+)?';
+        $path   = '(?:\/[\w\.\-]+)*\/?';
 
-        $this->patterns[] = '\b(?i)www?(?-i)\.'.$domain;
-        $this->patterns[] = '\b(?i)ftp?(?-i)\.'.$domain;
+        $this->patterns[] = '\b(?i)www?(?-i)\.'.$domain.$port.$path;
+        $this->patterns[] = '\b(?i)ftp?(?-i)\.'.$domain.$path;
     }
 
     function getType()  { return 'substition'; }
