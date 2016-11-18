@@ -6,10 +6,14 @@
  * @author Satoshi Sahara <sahara.satoshi@gmail.com>
  *
  * Usage/Example:
- *    [link name](url "title")
+ *    [link name](url "optional title")
+ *    ![alt text](url "optional title")
  *
  *    [example](https://example.com "Example site")
  *      -> <a href="https://example.com" title="Example site">example</a>
+ *
+ *    ![example](https://example.com/image.png "picture")
+ *      -> <img href="https://example.com/image.png" alt="example" title="picture"/>
  */
 
 if(!defined('DOKU_INC')) die();
@@ -22,7 +26,7 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
 
     function __construct() {
         $this->mode = substr(get_class($this), 7);
-        $this->pattern = '\[[^\r\n]+\]\([^\r\n]*?(?: ?"[^\r\n]*?")?\)';
+        $this->pattern = '!?\[[^\r\n]+\]\([^\r\n]*?(?: ?"[^\r\n]*?")?\)';
     }
 
     function getType()  { return 'substition'; }
@@ -41,8 +45,10 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
      */
     function handle($match, $state, $pos, Doku_Handler $handler) {
 
+        $type = ($match[0] == '!') ? 'image' : 'link';
+
         $n = strpos($match, '](');
-        $text = substr($match, 1, $n-1);
+        $text = substr( ltrim($match,'!'), 1, $n-1);
         $url = str_replace("\t",' ', trim(substr($match, $n+2, -1)) );
 
         // check title in string enclosed by double quaotation chars
@@ -61,7 +67,7 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
             return false;
         }
 
-        return array($state, $text, $url, $title);
+        return array($state, $type, $text, $url, $title);
     }
 
     /**
@@ -72,7 +78,14 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
 
         if ($format == 'metadata') return false;
 
-        list($state, $text, $url, $title) = $data;
+        list($state, $type, $text, $url, $title) = $data;
+
+        if ($type == 'image') {
+            if (empty($title)) $title = $url;
+            $html = '<img src="'.$url.'" alt="'.hsc($text).'" title="'.hsc($title).'" />';
+            $renderer->doc .= $html;
+            return true;
+        }
 
 
         //!!TEST!! allow formatting of anchor text
