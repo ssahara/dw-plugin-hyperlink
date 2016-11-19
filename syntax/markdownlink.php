@@ -70,7 +70,14 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
 
         // check image mime type
         if ($type == 'image') {
-            list($ext, $mime) = mimetype($url);
+            // remove url query and fragment component
+            $src = $url;
+            if (strpos($src,'?') !== false)
+                $src = strstr($url, '?', true);
+            if (strpos($src,'#') !== false)
+                $src = strstr($src, '#', true);
+
+            list($ext, $mime) = mimetype($src);
             if (substr($mime, 0, 5) != 'image') {
                 $type = 'link';
             }
