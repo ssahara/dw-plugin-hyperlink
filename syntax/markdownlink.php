@@ -46,9 +46,10 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
     function handle($match, $state, $pos, Doku_Handler $handler) {
 
         $type = ($match[0] == '!') ? 'image' : 'link';
+        if ($type == 'image') $match = ltrim($match,'!');
 
         $n = strpos($match, '](');
-        $text = substr( ltrim($match,'!'), 1, $n-1);
+        $text = substr($match, 1, $n-1);
         $url = str_replace("\t",' ', trim(substr($match, $n+2, -1)) );
 
         // check title in string enclosed by double quaotation chars
@@ -67,6 +68,15 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
             return false;
         }
 
+        // check image mime type
+        if ($type == 'image') {
+            list($ext, $mime) = mimetype($url);
+            if (substr($mime, 0, 5) != 'image') {
+                $type = 'link';
+            }
+        }
+
+
         return array($state, $type, $text, $url, $title);
     }
 
@@ -80,6 +90,7 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
 
         list($state, $type, $text, $url, $title) = $data;
 
+        // images
         if ($type == 'image') {
             if (empty($title)) $title = $url;
             $html = '<img src="'.$url.'" alt="'.hsc($text).'" title="'.hsc($title).'" />';
