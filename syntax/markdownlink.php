@@ -6,10 +6,14 @@
  * @author Satoshi Sahara <sahara.satoshi@gmail.com>
  *
  * Usage/Example:
- *    [link name](url "title")
+ *    [link name](url "optional title")
+ *    ![alt text](url "optional title")
  *
  *    [example](https://example.com "Example site")
  *      -> <a href="https://example.com" title="Example site">example</a>
+ *
+ *    ![example](https://example.com/image.png "picture")
+ *      -> <img href="https://example.com/image.png" alt="example" title="picture"/>
  */
 
 if(!defined('DOKU_INC')) die();
@@ -22,7 +26,7 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
 
     function __construct() {
         $this->mode = substr(get_class($this), 7);
-        $this->pattern = '\[[^\r\n]+\]\([^\r\n]*?(?: ?"[^\r\n]*?")?\)';
+        $this->pattern = '!?\[[^\[\]\r\n]+\]\([^\r\n]*?(?: ?\"[^"\r\n]*?\")?\)';
     }
 
     function getType()  { return 'substition'; }
@@ -40,6 +44,9 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
      * Handle the match
      */
     function handle($match, $state, $pos, Doku_Handler $handler) {
+
+        $type = ($match[0] == '!') ? 'image' : 'link';
+        if ($type == 'image') $match = ltrim($match,'!');
 
         $n = strpos($match, '](');
         $text = substr($match, 1, $n-1);
@@ -61,7 +68,24 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
             return false;
         }
 
-        return array($state, $text, $url, $title);
+        // check image mime type
+        if ($type == 'image') {
+            // remove url query and fragment component
+            $src = strtolower($url);
+            if (strpos($src,'?') !== false)
+                $src = strstr($url, '?', true);
+            if (strpos($src,'#') !== false)
+                $src = strstr($src, '#', true);
+
+            list($ext, $mime) = mimetype($src);
+            if (substr($mime, 0, 6) != 'image/') {
+                $type = 'link';
+            }
+        } else {
+            $ext = false;
+        }
+
+        return array($state, $type, $ext, $text, $url, $title);
     }
 
     /**
@@ -72,7 +96,15 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
 
         if ($format == 'metadata') return false;
 
-        list($state, $text, $url, $title) = $data;
+        list($state, $type, $ext, $text, $url, $title) = $data;
+
+        // images
+        if ($type == 'image') {
+            if (empty($title)) $title = $url;
+            $html = '<img src="'.$url.'" alt="'.hsc($text).'" title="'.hsc($title).'" />';
+            $renderer->doc .= $html;
+            return true;
+        }
 
 
         //!!TEST!! allow formatting of anchor text
@@ -110,6 +142,12 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
 
         $link['name']  = $text;
         $link['title'] = $title ?: $url;
+
+        // file icon
+        if ($ext) {
+            $class = preg_replace('/[^_\-a-z0-9]+/i', '_', $ext);
+            $link['class'] .= ' mediafile mf_'.$class;
+        }
 
         if($conf['relnofollow']) $link['rel'] .= ' nofollow';
         if($conf['target']['extern']) $link['rel'] .= ' noopener';
