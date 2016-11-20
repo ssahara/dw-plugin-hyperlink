@@ -101,7 +101,26 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
         // images
         if ($type == 'image') {
             if (empty($title)) $title = $url;
-            $html = '<img src="'.$url.'" alt="'.hsc($text).'" title="'.hsc($title).'" />';
+
+            // split url query
+            if (strpos($url, '?')) {
+                list($url, $query) = explode('?', $url);
+                $parser = $this->loadHelper('hyperlink_parser');
+                $attrs = $parser->getArguments($query);
+
+                $css = '';
+                foreach (array('width','height') as $attr) {
+                    if (!array_key_exists($attr, $attrs)) continue;
+                    $v = is_numeric($attrs[$attr])? $attrs[$attr].'px' : $attrs[$attr];
+                    $css.= $attr.':'.$v.'; ';
+                }
+            }
+
+            $html = '<img src="'.$url.'" alt="'.hsc($text).'" title="'.hsc($title).'"';
+            if (!empty($css)) {
+                $html.= ' style="'.trim($css).'"';
+            }
+            $html.= ' />';
             $renderer->doc .= $html;
             return true;
         }
