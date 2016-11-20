@@ -71,20 +71,21 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
         // check image mime type
         if ($type == 'image') {
             // remove url query and fragment component
-            $src = $url;
+            $src = strtolower($url);
             if (strpos($src,'?') !== false)
                 $src = strstr($url, '?', true);
             if (strpos($src,'#') !== false)
                 $src = strstr($src, '#', true);
 
             list($ext, $mime) = mimetype($src);
-            if (substr($mime, 0, 5) != 'image') {
+            if (substr($mime, 0, 6) != 'image/') {
                 $type = 'link';
             }
+        } else {
+            $ext = false;
         }
 
-
-        return array($state, $type, $text, $url, $title);
+        return array($state, $type, $ext, $text, $url, $title);
     }
 
     /**
@@ -95,7 +96,7 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
 
         if ($format == 'metadata') return false;
 
-        list($state, $type, $text, $url, $title) = $data;
+        list($state, $type, $ext, $text, $url, $title) = $data;
 
         // images
         if ($type == 'image') {
@@ -141,6 +142,12 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
 
         $link['name']  = $text;
         $link['title'] = $title ?: $url;
+
+        // file icon
+        if ($ext) {
+            $class = preg_replace('/[^_\-a-z0-9]+/i', '_', $ext);
+            $link['class'] .= ' mediafile mf_'.$class;
+        }
 
         if($conf['relnofollow']) $link['rel'] .= ' nofollow';
         if($conf['target']['extern']) $link['rel'] .= ' noopener';
