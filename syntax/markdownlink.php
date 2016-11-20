@@ -26,7 +26,7 @@ class syntax_plugin_hyperlink_markdownlink extends DokuWiki_Syntax_Plugin {
 
     function __construct() {
         $this->mode = substr(get_class($this), 7);
-        $this->pattern = '!?\[[^\r\n]+\]\([^\r\n]*?(?: ?"[^\r\n]*?")?\)';
+        $this->pattern = '!?\[[^\[\]\r\n]+\]\([^\r\n]*?(?: ?\"[^"\r\n]*?\")?\)';
     }
 
     function getType()  { return 'substition'; }
