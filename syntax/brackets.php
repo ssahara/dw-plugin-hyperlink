@@ -23,6 +23,7 @@ if (!defined('DOKU_INC')) die();
 class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
 
     protected $mode;
+    protected $stack; // remember whether '<span class="curid">' wrap is necessary
 
     // "\[\[(?:(?:[^[\]]*?\[.*?\])|.*?)\]\]"
 
@@ -146,6 +147,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
         switch($state) {
             case DOKU_LEXER_ENTER:
                 list($type, $id, $params, $text) = $data;
+                $this->stack = null;
 
                 /* 
                  * generate html of link anchor
@@ -155,6 +157,10 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                     $output = $renderer->locallink($id, $name, true);
                 } elseif ($type == 'internallink') {
                     $output = $renderer->internallink($id, $name, $search, true, 'content');
+                    // remove span tag for current page highlight, 
+                    // set stack whether current page wrap is necessary
+                    $search = array('<span class="curid">','</span>');
+                    $output = str_replace($search, '', $output, $this->stack);
                 } elseif ($type == 'externallink') {
                     $output = $renderer->externallink($id, $name, true);
                 } elseif ($type == 'interwikilink') {
@@ -169,7 +175,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                     // dummy output
                     $output = '<a href="example.com" title="example">example.com</a>';
                 }
-                $html = strstr($output, '>', true);
+                $html = strstr($output, '>', true).'>'; // open tag on anchor
 
                 if ($params) {
                     // load prameter parser utility
@@ -199,7 +205,10 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                         $html = $this->setAttribute($html, $attr, $value, $append);
                     }
                 }
-                $html.= '>';
+
+                if ($this->stack) {
+                    $html = '<span class="curid">'.$html;
+                }
                 $renderer->doc.= $html;
 
                 // render link text, if necessary
@@ -212,7 +221,12 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                 break;
 
             case DOKU_LEXER_EXIT:
-                $renderer->doc.= '</a>';
+                $html = '</a>';
+                if ($this->stack) {
+                    $html = $html.'</span>';
+                    $this->stack = null;
+                }
+                $renderer->doc.= $html;
                 break;
         }
         return true;
