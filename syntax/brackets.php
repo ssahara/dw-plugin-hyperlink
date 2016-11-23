@@ -93,7 +93,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
 
         switch ($state) {
             case DOKU_LEXER_ENTER:
-                // separate id and params
+                // see how link text should be rendered
                 if (substr($match, -1) == '|') {
                     // matched entry_pattern1
                     $str = substr($match, 2, -1);
@@ -105,9 +105,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                 }
                 $str = str_replace("\t",' ', trim($str));
 
-                //$match = preg_replace('/\s{2,}/', '', $str);
-                //list($id, $params) = explode(' ', $match, 2);
-
+                // separate id and params; note: id could be a phrase
                 $matches = explode(' ', $str);
                 $appendTo = 'id';
                 foreach ($matches as $part) {
