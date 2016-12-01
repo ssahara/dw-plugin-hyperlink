@@ -158,104 +158,97 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
         if ($format !== 'xhtml') return false;
         list($state, $calls, $link_data) = $indata;
 
+        if ($state !== DOKU_LEXER_EXIT) return true;
 
-        switch($state) {
-            case DOKU_LEXER_ENTER:
-            case DOKU_LEXER_UNMATCHED:
-                return false;
+        /* Entry data */
+        list($type, $id, $params, $text) = $link_data;
 
-            case DOKU_LEXER_EXIT:
-                list($type, $id, $params, $text) = $link_data;
+        /* 
+         * generate html of link anchor
+         * see relevant functions in inc/parser/xhtml.php file
+         */
+        if ($type == 'locallink') {
+            $output = $renderer->locallink($id, $name, true);
+        } elseif ($type == 'internallink') {
+            $output = $renderer->internallink($id, $name, $search, true, 'content');
+            // remove span tag for current page highlight, 
+            // use $count to see whether current page wrap is necessary
+            $search = array('<span class="curid">','</span>');
+            $output = str_replace($search, '', $output, $count);
 
-                /* 
-                 * generate html of link anchor
-                 * see relevant functions in inc/parser/xhtml.php file
-                 */
-                if ($type == 'locallink') {
-                    $output = $renderer->locallink($id, $name, true);
-                } elseif ($type == 'internallink') {
-                    $output = $renderer->internallink($id, $name, $search, true, 'content');
-                    // remove span tag for current page highlight, 
-                    // use $count to see whether current page wrap is necessary
-                    $search = array('<span class="curid">','</span>');
-                    $output = str_replace($search, '', $output, $count);
+        } elseif ($type == 'externallink') {
+            $output = $renderer->externallink($id, $name, true);
+        } elseif ($type == 'interwikilink') {
+            list($wikiName, $wikiUri) = explode('>', $id, 2);
+            $wikiName = strtolower($wikiName);
+            $output = $renderer->interwikilink($id, $name, $wikiName, $wikiUri, true);
+        } elseif ($type == 'windowssharelink') {
+            $output = $renderer->windowssharelink($id, $name, true);
+        } elseif ($type == 'emaillink') {
+            $output = $renderer->emaillink($id, $name, true);
+        } else {
+            // dummy output
+            $output = '<a href="example.com" title="example">example.com</a>';
+        }
+        $html = strstr($output, '>', true).'>'; // open tag of anchor
 
-                } elseif ($type == 'externallink') {
-                    $output = $renderer->externallink($id, $name, true);
-                } elseif ($type == 'interwikilink') {
-                    list($wikiName, $wikiUri) = explode('>', $id, 2);
-                    $wikiName = strtolower($wikiName);
-                    $output = $renderer->interwikilink($id, $name, $wikiName, $wikiUri, true);
-                } elseif ($type == 'windowssharelink') {
-                    $output = $renderer->windowssharelink($id, $name, true);
-                } elseif ($type == 'emaillink') {
-                    $output = $renderer->emaillink($id, $name, true);
-                } else {
-                    // dummy output
-                    $output = '<a href="example.com" title="example">example.com</a>';
+        if ($params) {
+            // load prameter parser utility
+            $parser = $this->loadHelper('hyperlink_parser');
+            $attrs = $parser->getArguments($params);
+
+            // modify attributes if we need to open the link in a new window
+            if (preg_match('/^window\b/',$attrs['target'])) {
+                $opts = $parser->getArguments($attrs['target']);
+
+                $attrs['target'] = 'window';
+                $attrs['class'] .= ($attrs['class'] ? ' ' : '').'openwindow';
+
+                // add JavaScript to open a new window
+                $js = $this->loadHelper('hyperlink_window');
+                $attrs['onclick'] = $js->window_open($opts);
+            } else {
+                unset($attrs['onclick']);
+            }
+
+            foreach ($attrs as $attr => $value) {
+                // restrict effective attributs
+                if (!in_array($attr, array('class','target','title','onclick'))) {
+                    continue;
                 }
-                $html = strstr($output, '>', true).'>'; // open tag on anchor
+                $append = in_array($attr, array('class'));
+                $html = $this->setAttribute($html, $attr, $value, $append);
+            }
+        }
 
-                if ($params) {
-                    // load prameter parser utility
-                    $parser = $this->loadHelper('hyperlink_parser');
-                    $attrs = $parser->getArguments($params);
+        if ($count) {
+            $html = '<span class="curid">'.$html;
+        }
+        $renderer->doc.= $html;
 
-                    // modify attributes if we need to open the link in a new window
-                    if (preg_match('/^window\b/',$attrs['target'])) {
-                        $opts = $parser->getArguments($attrs['target']);
-
-                        $attrs['target'] = 'window';
-                        $attrs['class'] .= ($attrs['class'] ? ' ' : '').'openwindow';
-
-                        // add JavaScript to open a new window
-                        $js = $this->loadHelper('hyperlink_window');
-                        $attrs['onclick'] = $js->window_open($opts);
-                    } else {
-                        unset($attrs['onclick']);
-                    }
-
-                    foreach ($attrs as $attr => $value) {
-                        // restrict effective attributs
-                        if (!in_array($attr, array('class','target','title','onclick'))) {
-                            continue;
-                        }
-                        $append = in_array($attr, array('class'));
-                        $html = $this->setAttribute($html, $attr, $value, $append);
-                    }
+        // render "unmatched" parts as link text
+        if (is_null($text) && is_array($calls)) {
+            foreach ($calls as $i) {
+                if (method_exists($renderer, $i[0])) {
+                    call_user_func_array(array($renderer,$i[0]), $i[1]);
+                    if (!$text && ($i[0] == 'cdata')) $text = true;
                 }
+            }
+        }
+        // we should avoid non-visible link
+        if (!$text) {
+            $text = strstr($output,'>');
+            $text = substr( $text, 1, -4); // drop '>' and '</a>'
+            $renderer->doc.= $text;
+        }
 
-                if ($count) {
-                    $html = '<span class="curid">'.$html;
-                }
-                $renderer->doc.= $html;
-
-                // render "unmatched" parts as link text
-
-                if (is_null($text) && is_array($calls)) {
-                    foreach ($calls as $i) {
-                        if (method_exists($renderer, $i[0])) {
-                            call_user_func_array(array($renderer,$i[0]), $i[1]);
-                            if (!$text && ($i[0] == 'cdata')) $text = true;
-                        }
-                    }
-                }
-                // we should avoid non-visible link
-                if (!$text) {
-                    $text = strstr($output,'>');
-                    $text = substr( $text, 1, -4); // drop '>' and '</a>'
-                    $renderer->doc.= $text;
-                }
-
-                // close </a>
-                $html = '</a>';
-                if ($count) {
-                    $html = $html.'</span>';
-                    unset($count);
-                }
-                $renderer->doc.= $html;
-                break;
-        } // end of switch
+        // close </a>
+        $html = '</a>';
+        if ($count) {
+            $html = $html.'</span>';
+            unset($count);
+        }
+        $renderer->doc.= $html;
         return true;
     }
 
