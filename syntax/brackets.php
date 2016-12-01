@@ -112,8 +112,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                     if (($appendTo == 'id' ) && (strpos($part, '="') !== false)) {
                         $appendTo = 'params';
                     }
-                    if (${$appendTo}) ${$appendTo} .= ' ';
-                    ${$appendTo} .= $part;
+                    ${$appendTo}.= (${$appendTo} ? ' ' : '') . $part;
                 }
 
                 // check which kind of link
@@ -155,7 +154,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
     function render($format, Doku_Renderer $renderer, $indata) {
         global $ID, $conf;
 
-        if ($format !== 'xhtml') return false;
+        if ($format == 'metadata') return false;
         list($state, $calls, $link_data) = $indata;
 
         if ($state !== DOKU_LEXER_EXIT) return true;
