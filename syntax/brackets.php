@@ -23,7 +23,7 @@ if (!defined('DOKU_INC')) die();
 class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
 
     protected $mode;
-    protected $stack; // remember whether '<span class="curid">' wrap is necessary
+    protected $link_data;
 
     // "\[\[(?:(?:[^[\]]*?\[.*?\])|.*?)\]\]"
 
@@ -89,7 +89,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
     /**
      * handle syntax
      */
-    function handle($match, $state, $pos, Doku_Handler $handler){
+    function handle($match, $state, $pos, Doku_Handler $handler) {
 
         switch ($state) {
             case DOKU_LEXER_ENTER:
@@ -120,7 +120,14 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                 $type = $this->_getLinkType($id);
 
                 $data = array($type, $id, $params, $text);
-                return array($state, $data);
+
+                $this->link_data = $data;
+
+                // intercept calls
+                $ReWriter = new Doku_Handler_Nest($handler->CallWriter, $this->mode);
+                $handler->CallWriter = & $ReWriter;
+                // don't add any plugin instruction:
+                return false;
 
             case DOKU_LEXER_UNMATCHED: // link text
                 // happens only for entry_pattern1
@@ -128,24 +135,37 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                 return false;
 
             case DOKU_LEXER_EXIT:      // $match is ']]'
-                return array($state, '');
+                // get all calls we intercepted
+                $calls = $handler->CallWriter->calls;
+
+                // switch back to the old call writer
+                $ReWriter = & $handler->CallWriter;
+                $handler->CallWriter = & $ReWriter->CallWriter;
+
+                // return a plugin instruction
+                return array($state, $calls, $this->link_data);
+
         }
         return false;
     }
 
     /**
-     * Render output
+     * Create output
      */
     function render($format, Doku_Renderer $renderer, $indata) {
         global $ID, $conf;
 
         if ($format !== 'xhtml') return false;
-        list($state, $data) = $indata;
+        list($state, $calls, $link_data) = $indata;
+
 
         switch($state) {
             case DOKU_LEXER_ENTER:
-                list($type, $id, $params, $text) = $data;
-                $this->stack = null;
+            case DOKU_LEXER_UNMATCHED:
+                return false;
+
+            case DOKU_LEXER_EXIT:
+                list($type, $id, $params, $text) = $link_data;
 
                 /* 
                  * generate html of link anchor
@@ -156,9 +176,10 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                 } elseif ($type == 'internallink') {
                     $output = $renderer->internallink($id, $name, $search, true, 'content');
                     // remove span tag for current page highlight, 
-                    // set stack whether current page wrap is necessary
+                    // use $count to see whether current page wrap is necessary
                     $search = array('<span class="curid">','</span>');
-                    $output = str_replace($search, '', $output, $this->stack);
+                    $output = str_replace($search, '', $output, $count);
+
                 } elseif ($type == 'externallink') {
                     $output = $renderer->externallink($id, $name, true);
                 } elseif ($type == 'interwikilink') {
@@ -204,29 +225,37 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                     }
                 }
 
-                if ($this->stack) {
+                if ($count) {
                     $html = '<span class="curid">'.$html;
                 }
                 $renderer->doc.= $html;
 
-                // render link text, if necessary
-                if ($text !== null) {
+                // render "unmatched" parts as link text
+
+                if (is_null($text) && is_array($calls)) {
+                    foreach ($calls as $i) {
+                        if (method_exists($renderer, $i[0])) {
+                            call_user_func_array(array($renderer,$i[0]), $i[1]);
+                            if (!$text && ($i[0] == 'cdata')) $text = true;
+                        }
+                    }
+                }
+                // we should avoid non-visible link
+                if (!$text) {
                     $text = strstr($output,'>');
                     $text = substr( $text, 1, -4); // drop '>' and '</a>'
                     $renderer->doc.= $text;
                 }
 
-                break;
-
-            case DOKU_LEXER_EXIT:
+                // close </a>
                 $html = '</a>';
-                if ($this->stack) {
+                if ($count) {
                     $html = $html.'</span>';
-                    $this->stack = null;
+                    unset($count);
                 }
                 $renderer->doc.= $html;
                 break;
-        }
+        } // end of switch
         return true;
     }
 
