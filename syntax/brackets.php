@@ -125,7 +125,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                 // intercept calls
                 $ReWriter = new Doku_Handler_Nest($handler->CallWriter, $this->mode);
                 $handler->CallWriter = & $ReWriter;
-                // don't add any plugin instruction:
+                // don't add any plugin instruction
                 return false;
 
             case DOKU_LEXER_UNMATCHED: // link text
@@ -170,10 +170,10 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
             $output = $renderer->locallink($id, $name, true);
         } elseif ($type == 'internallink') {
             $output = $renderer->internallink($id, $name, $search, true, 'content');
-            // remove span tag for current page highlight, 
-            // use $count to see whether current page wrap is necessary
+            // remove span tag for current pagename highlight,
+            // use $curid to see whether current pagename wrap is necessary
             $search = array('<span class="curid">','</span>');
-            $output = str_replace($search, '', $output, $count);
+            $output = str_replace($search, '', $output, $curid);
 
         } elseif ($type == 'externallink') {
             $output = $renderer->externallink($id, $name, true);
@@ -220,7 +220,8 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
             }
         }
 
-        if ($count) {
+        // open anchor tag <a>
+        if ($curid) {
             $html = '<span class="curid">'.$html;
         }
         $renderer->doc.= $html;
@@ -243,9 +244,9 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
 
         // close </a>
         $html = '</a>';
-        if ($count) {
+        if ($curid) {
             $html = $html.'</span>';
-            unset($count);
+            unset($curid);
         }
         $renderer->doc.= $html;
         return true;

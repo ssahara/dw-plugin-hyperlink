@@ -64,7 +64,7 @@ class syntax_plugin_hyperlink_external extends DokuWiki_Syntax_Plugin {
     }
 
     /**
-     * Render output
+     * Create output
      */
     function render($format, Doku_Renderer $renderer, $data) {
         return true;
