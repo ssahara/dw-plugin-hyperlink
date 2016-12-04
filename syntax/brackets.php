@@ -235,11 +235,15 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                     }
                     // image link adjustment
                     if (($i[0] == 'internalmedia') or ($i[0] == 'externalmedia')) {
-                        list($ext, $mime) = mimetype($i[1][0], false);
-                        if (substr($mime, 0, 5) == 'image') {
-                            $i[1][6] = 'nolink'; // force nolink for images
-                            if (!$text) $text = true;
-                        }
+                        // force nolink for images
+                        //list($ext, $mime) = mimetype($i[1][0], false);
+                        //if (substr($mime, 0, 5) == 'image') {
+                        //    $i[1][6] = 'nolink';
+                        //    if (!$text) $text = true;
+                        //}
+                        // force nolink for any media files
+                        $i[1][6] = 'nolink';
+                        if (!$text) $text = true;
                     }
                     call_user_func_array(array($renderer,$i[0]), $i[1]);
                 }
