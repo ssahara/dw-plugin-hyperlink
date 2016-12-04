@@ -13,7 +13,7 @@
  *    [[id target="_blank" | **bold text** ]]          internal page
  *    [[doku>interwiki target="_blank" | text ]]       interwiki
  *    [[http://exaple.com target="_self" | text ]]     external url
- *    [[@foo@example.com|contact **me**!]]             mail link
+ *    [[foo@example.com|contact **me**!]]              mail link
  *
  */
 
@@ -230,8 +230,18 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
         if (is_null($text) && is_array($calls)) {
             foreach ($calls as $i) {
                 if (method_exists($renderer, $i[0])) {
+                    if ($i[0] == 'cdata') {
+                        if (!$text && $i[1][0]) $text = true;
+                    }
+                    // image link adjustment
+                    if (($i[0] == 'internalmedia') or ($i[0] == 'externalmedia')) {
+                        list($ext, $mime) = mimetype($i[1][0], false);
+                        if (substr($mime, 0, 5) == 'image') {
+                            $i[1][6] = 'nolink'; // force nolink for images
+                            if (!$text) $text = true;
+                        }
+                    }
                     call_user_func_array(array($renderer,$i[0]), $i[1]);
-                    if (!$text && ($i[0] == 'cdata')) $text = true;
                 }
             }
         }
@@ -280,7 +290,5 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
         }
         return $html;
     }
-
-
 
 }
