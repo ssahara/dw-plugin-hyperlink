@@ -4,11 +4,13 @@ Extend DokuWiki Link syntax to
 * allow formatting title text of the link
 * specify a frame where the linked page/media to be opened, eg. in a same tab, new tab or popup window
 
-Syntax Usage/Example
+Usage/Example
 --------------------
+Hyperlink syntax should be compatible with original syntax usage...
 
 ### Formatting the link text###
-You may use basic formatting for the link text. 
+This plugin has initially developed to implement formatting in link text. You may use **bold**, *italic*, <sup>superscript</sup> and <sub>subscript</sub> text in links, for instance use a chemical formula <a href="https://en.wikipedia.org/wiki/Ferrocyanide" title="Ferrocyanide" rel="nofollow" target="_blank">[Fe<sup>II</sup>(CN)<sub>6</sub>]<sup>4-</sup></a> as anchor text.
+
 [Text conversion](https://www.dokuwiki.org/wiki:syntax#text_conversions) and [smiileys](https://www.dokuwiki.org/smileys) are available in the link text.
 
 ```
