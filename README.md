@@ -6,7 +6,7 @@ Extend DokuWiki Link syntax to
 
 Usage/Example
 --------------------
-Hyperlink syntax should be compatible with original syntax usage...
+Hyperlink plugin supersedes the DokuWiki built-in syntax of creating links – double brackets `[[...]]` – to enable additonal feature. It however shuld be compatible with original syntax usage...
 
 ### Formatting the link text###
 This plugin has initially developed to implement formatting in link text. You may use **bold**, *italic*, <sup>superscript</sup> and <sub>subscript</sub> text in links, for instance use a chemical formula <a href="https://en.wikipedia.org/wiki/Ferrocyanide" title="Ferrocyanide" rel="nofollow" target="_blank">[Fe<sup>II</sup>(CN)<sub>6</sub>]<sup>4-</sup></a> as anchor text.
