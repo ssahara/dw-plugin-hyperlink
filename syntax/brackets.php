@@ -230,20 +230,26 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
         if (is_null($text) && is_array($calls)) {
             foreach ($calls as $i) {
                 if (method_exists($renderer, $i[0])) {
-                    if ($i[0] == 'cdata') {
-                        if (!$text && $i[1][0]) $text = true;
-                    }
-                    // image link adjustment
-                    if (($i[0] == 'internalmedia') or ($i[0] == 'externalmedia')) {
-                        // force nolink for images
-                        //list($ext, $mime) = mimetype($i[1][0], false);
-                        //if (substr($mime, 0, 5) == 'image') {
-                        //    $i[1][6] = 'nolink';
-                        //    if (!$text) $text = true;
-                        //}
-                        // force nolink for any media files
-                        $i[1][6] = 'nolink';
-                        if (!$text) $text = true;
+                    switch ($i[0]) {
+                        case 'cdata':
+                        case 'smiley':
+                            if (!$text && trim($i[1][0])) $text = true;
+                            break;
+                        case 'externallink':  // external url
+                            $i[0] = 'cdata';
+                            if (!empty($i[1][1])) $i[1][0] = $i[1][1];
+                            if (!$text) $text = true;
+                            break;
+                        case 'internalmedia':
+                        case 'externalmedia':
+                            /* force nolink for images only
+                            list($ext, $mime) = mimetype($i[1][0], false);
+                            if (substr($mime, 0, 5) == 'image') {
+                                $i[1][6] = 'nolink';
+                            } */
+                            $i[1][6] = 'nolink'; // force nolink for any media files
+                            if (!$text) $text = true;
+                            break;
                     }
                     call_user_func_array(array($renderer,$i[0]), $i[1]);
                 }
