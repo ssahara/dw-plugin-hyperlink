@@ -1,6 +1,8 @@
 /*
  * DokuWiki Plugin HyperLink;
  */
+
+/* window open: target="window" */
 a.openwindow {
     color: #03c;
     transition: 0.5s;
@@ -13,5 +15,20 @@ a.openwindow:after {
     content: "⤴";
     font-size: 80%;
     vertical-align: text-top;
+}
+
+/* button emulation: class="button" */
+a.button {
+      display: inline-block;
+      background-color: __background_neu__ !important;
+      border: 1px solid __border__;
+      /* padding: .2em !important; */
+      /* border-radius: 6px; */
+      box-shadow: 5px 5px 10px __background__;
+}
+a.button:hover {
+      text-decoration: none !important;
+      background-color: __background_alt__ !important;
+      box-shadow: 5px 5px 10px __background_alt__;
 }
 
