@@ -24,6 +24,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
 
     protected $mode;
     protected $link_data;
+    protected $highlighter = array('<span class="curid">','</span>');
 
     // "\[\[(?:(?:[^[\]]*?\[.*?\])|.*?)\]\]"
 
@@ -172,8 +173,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
             $output = $renderer->internallink($id, $name, $search, true, 'content');
             // remove span tag for current pagename highlight,
             // use $curid to see whether current pagename wrap is necessary
-            $search = array('<span class="curid">','</span>');
-            $output = str_replace($search, '', $output, $curid);
+            $output = str_replace($this->highlighter, '', $output, $curid);
 
         } elseif ($type == 'externallink') {
             $output = $renderer->externallink($id, $name, true);
@@ -222,7 +222,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
 
         // open anchor tag <a>
         if ($curid) {
-            $html = '<span class="curid">'.$html;
+            $html = $this->highlighter[0].$html;
         }
         $renderer->doc.= $html;
 
@@ -265,7 +265,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
         // close </a>
         $html = '</a>';
         if ($curid) {
-            $html = $html.'</span>';
+            $html = $html.$this->highlighter[1];
             unset($curid);
         }
         $renderer->doc.= $html;
