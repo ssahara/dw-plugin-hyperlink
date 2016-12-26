@@ -67,7 +67,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
         if ( preg_match('#^/{1,2}#', $link[0]) ) {
             // path from DocumentRoot or schemaless urls
             $type = 'baselink';
-        } elseif ( preg_match('/^[a-zA-Z0-9\.]+>{1}.*$/u',$link[0]) ) {
+        } elseif ( preg_match('/^[a-zA-Z0-9\.]+>/',$link[0]) ) {
             // Interwiki
             $type = 'interwikilink';
         } elseif ( preg_match('/^\\\\\\\\[^\\\\]+?\\\\/u',$link[0]) ) {
