@@ -117,9 +117,9 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                 }
 
                 // check which kind of link
-                $type = $this->_getLinkType($id);
+                $call = $this->_getLinkType($id);
 
-                $data = array($type, $id, $params, $text);
+                $data = array($call, $id, $params, $text);
 
                 $this->link_data = $data;
 
@@ -161,29 +161,29 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
         if ($state !== DOKU_LEXER_EXIT) return true;
 
         /* Entry data */
-        list($type, $id, $params, $text) = $link_data;
+        list($call, $id, $params, $text) = $link_data;
 
         /* 
          * generate html of link anchor
          * see relevant functions in inc/parser/xhtml.php file
          */
-        if ($type == 'locallink') {
+        if ($call == 'locallink') {
             $output = $renderer->locallink($id, $name, true);
-        } elseif ($type == 'internallink') {
+        } elseif ($call == 'internallink') {
             $output = $renderer->internallink($id, $name, $search, true, 'content');
             // remove span tag for current pagename highlight,
             // use $curid to see whether current pagename wrap is necessary
             $output = str_replace($this->highlighter, '', $output, $curid);
 
-        } elseif ($type == 'externallink') {
+        } elseif ($call == 'externallink') {
             $output = $renderer->externallink($id, $name, true);
-        } elseif ($type == 'interwikilink') {
+        } elseif ($call == 'interwikilink') {
             list($wikiName, $wikiUri) = explode('>', $id, 2);
             $wikiName = strtolower($wikiName);
             $output = $renderer->interwikilink($id, $name, $wikiName, $wikiUri, true);
-        } elseif ($type == 'windowssharelink') {
+        } elseif ($call == 'windowssharelink') {
             $output = $renderer->windowssharelink($id, $name, true);
-        } elseif ($type == 'emaillink') {
+        } elseif ($call == 'emaillink') {
             $output = $renderer->emaillink($id, $name, true);
         } else {
             // dummy output
