@@ -64,7 +64,10 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
 
         $link = array($id);
 
-        if ( preg_match('/^[a-zA-Z0-9\.]+>{1}.*$/u',$link[0]) ) {
+        if ( preg_match('#^/{1,2}#', $link[0]) ) {
+            // path from DocumentRoot or schemaless urls
+            $type = 'baselink';
+        } elseif ( preg_match('/^[a-zA-Z0-9\.]+>{1}.*$/u',$link[0]) ) {
             // Interwiki
             $type = 'interwikilink';
         } elseif ( preg_match('/^\\\\\\\\[^\\\\]+?\\\\/u',$link[0]) ) {
@@ -184,6 +187,10 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                 list($wikiName, $wikiUri) = explode('>', $id, 2);
                 $wikiName = strtolower($wikiName);
                 $output = $renderer->$call($id, $name, $wikiName, $wikiUri, true);
+                break;
+            case 'baselink':
+                // path from DocumentRoot or schemaless urls
+                $output = '<a href="'.$id.'" title="'.hsc($id).'">'.hsc($id).'</a>';
                 break;
             default:
                 // dummy output
