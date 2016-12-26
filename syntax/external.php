@@ -5,13 +5,17 @@
  * @license GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author  Satoshi Sahara <sahara.satoshi@gmail.com>
  *
- * Supersede DokuWiki's connect patterns for externlnal urls, that are
- * to be handled without any markups, in order to avoid confliction wirh
- * syntax_plugin_hyperlink_brackets class when they are used as link text
- * after "|" in link syntax '[[external urls|link text]]'.
+ * Supersede DokuWiki's connect patterns for automagical external urls
+ * those are rendered as links without any special markups.
+ * Hyperlink syntax plugin must handle them that may appear after "|"
+ * as a part of link text, for example "[[id|settings of example.com]]".
  *
- * Also support IDN -Internationalized Domain Name - in external urls
- * those matched or found in 1) link text and 2) normal text.
+ * It is necessary to modify the pattern for automagical urls so that
+ * such urls should not take away a vital part of hyperlink brackets "]]"
+ * when they are used in link text of hyperlink syntax.
+ *
+ * The pattern for automagical external urls needs to be modified anyway,
+ * it is extended to support IDN (Internationalized Domain Name).
  * eg. 1) [[http://xn--wgv71a119e.jp|日本語.jp]]
  *     2) http://日本語.jp
  */
