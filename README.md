@@ -3,6 +3,7 @@ Hyper Link Syntax plugin
 Extend DokuWiki Link syntax to 
 * allow formatting title text of the link
 * specify a frame where the linked page/media to be opened, eg. in a same tab, new tab or popup window
+* set class attribute to provide a shape for the link such as button
 
 Note: When link text contains external URLs, they should be treated as normal text to avoid “link in link” occurrence. Therefore, syntax of automagical link patterns for external URLs (and simplified URLs) has modified slightly from original DokuWiki syntax. 
 
@@ -30,6 +31,13 @@ This plugin has initially developed to implement formatting in link text. You ma
 [[ns:page target="_self"  |**internal** link title]]    open in same tab
 [[https://example.com target="window 600x400" |title]]  open in new window
 ```
+
+### set class attribute for links
+
+```
+[[https://example.com class="button" |title]]  button link
+```
+
 
 ----
 Licensed under the GNU Public License (GPL) version 2
