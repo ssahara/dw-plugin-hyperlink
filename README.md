@@ -32,7 +32,7 @@ This plugin has initially developed to implement formatting in link text. You ma
 [[https://example.com target="window 600x400" |title]]  open in new window
 ```
 
-### set class attribute for links
+### Set class attribute for links
 
 ```
 [[https://example.com class="button" |title]]  button link
