@@ -167,29 +167,31 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
          * generate html of link anchor
          * see relevant functions in inc/parser/xhtml.php file
          */
-        if ($call == 'locallink') {
-            $output = $renderer->locallink($id, $name, true);
-        } elseif ($call == 'internallink') {
-            $output = $renderer->internallink($id, $name, $search, true, 'content');
-            // remove span tag for current pagename highlight,
-            // use $curid to see whether current pagename wrap is necessary
-            $output = str_replace($this->highlighter, '', $output, $curid);
+        switch ($call) {
+            case 'locallink':
+            case 'externallink':
+            case 'windowssharelink':
+            case 'emaillink':
+                $output = $renderer->$call($id, $name, true);
+                break;
+            case 'internallink':
+                $output = $renderer->$call($id, $name, $search, true, 'content');
+                // remove span tag for current pagename highlight,
+                // use $curid to see whether current pagename wrap is necessary
+                $output = str_replace($this->highlighter, '', $output, $curid);
+                break;
+            case 'interwikilink':
+                list($wikiName, $wikiUri) = explode('>', $id, 2);
+                $wikiName = strtolower($wikiName);
+                $output = $renderer->$call($id, $name, $wikiName, $wikiUri, true);
+                break;
+            default:
+                // dummy output
+                $output = '<a href="example.com" title="example">example.com</a>';
+        } //end of switch
 
-        } elseif ($call == 'externallink') {
-            $output = $renderer->externallink($id, $name, true);
-        } elseif ($call == 'interwikilink') {
-            list($wikiName, $wikiUri) = explode('>', $id, 2);
-            $wikiName = strtolower($wikiName);
-            $output = $renderer->interwikilink($id, $name, $wikiName, $wikiUri, true);
-        } elseif ($call == 'windowssharelink') {
-            $output = $renderer->windowssharelink($id, $name, true);
-        } elseif ($call == 'emaillink') {
-            $output = $renderer->emaillink($id, $name, true);
-        } else {
-            // dummy output
-            $output = '<a href="example.com" title="example">example.com</a>';
-        }
-        $html = strstr($output, '>', true).'>'; // open tag of anchor
+        // get open tag of anchor
+        $html = strstr($output, '>', true).'>';
 
         if ($params) {
             // load prameter parser utility
