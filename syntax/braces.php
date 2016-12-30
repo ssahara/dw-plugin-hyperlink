@@ -144,6 +144,20 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
         }
         $attrs['cache'] = $cache;
 
+        // modify target attributes if we need to open the link in a new window
+        if (preg_match('/^window\b/', $attrs['target'])) {
+            $opts = $parser->getArguments($attrs['target']);
+
+            $attrs['target'] = 'window';
+            $attrs['class'] .= ($attrs['class'] ? ' ' : '').'openwindow';
+
+            // add JavaScript to open a new window
+            $js = $this->loadHelper('hyperlink_window');
+            $attrs['onclick'] = $js->window_open($opts);
+        } else {
+            unset($attrs['onclick']);
+        }
+
         return $attrs;
     }
 
@@ -295,31 +309,14 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
         // get open tag of anchor
         $html = strstr($output, '>', true).'>';
 
-        if ($opts) {
-            $attrs = $opts;
-
-            // modify attributes if we need to open the link in a new window
-            if (preg_match('/^window\b/',$attrs['target'])) {
-                $opts = $this->_getMediaProps($attrs['target']);
-
-                $attrs['target'] = 'window';
-                $attrs['class'] .= ($attrs['class'] ? ' ' : '').'openwindow';
-
-                // add JavaScript to open a new window
-                $js = $this->loadHelper('hyperlink_window');
-                $attrs['onclick'] = $js->window_open($opts);
-            } else {
-                unset($attrs['onclick']);
+        // optional attributes
+        foreach ($attrs as $attr => $value) {
+            // restrict effective attributs
+            if (!in_array($attr, array('class','target','title','onclick'))) {
+                continue;
             }
-
-            foreach ($attrs as $attr => $value) {
-                // restrict effective attributs
-                if (!in_array($attr, array('class','target','title','onclick'))) {
-                    continue;
-                }
-                $append = in_array($attr, array('class'));
-                $html = $this->setAttribute($html, $attr, $value, $append);
-            }
+            $append = in_array($attr, array('class'));
+            $html = $this->setAttribute($html, $attr, $value, $append);
         }
 
         // open anchor tag <a>
