@@ -111,7 +111,7 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
      * @return (array)
      */
     protected function _getMediaProps($query) {
-        $params = array();
+        $attrs = array();
         $query = str_replace('&',' ', $query);
 
         // load prameter parser utility
@@ -144,7 +144,7 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
         }
         $attrs['cache'] = $cache;
 
-        return $attrs; //params;
+        return $attrs;
     }
 
 
@@ -166,16 +166,19 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
                     $str = substr($match, 3);
                     $text = false;
                 }
+                $str = str_replace("\t",' ', $str);
 
                 // separate id and options
                 $matches = explode(' ', $str);
-                $appendTo = 'id';
                 $id = $options = '';
+                $appendTo = 'id';
                 foreach ($matches as $part) {
                     if (($appendTo == 'id' ) && (strpos($part, '="') !== false)) {
                         $appendTo = 'options';
                     }
-                    ${$appendTo}.= $part ?: ' ';
+                    //${$appendTo}.= $part ?: ' ';
+                    ${$appendTo}.= (${$appendTo}) ? ' ' : '';
+                    ${$appendTo}.= $part ;
                 }
 
                 // Check alignment of id
@@ -196,7 +199,7 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
                 // Check whether this is a local or remote image
                 $call = $this->_getMediaType($src);
 
-                // param and option
+                // parse param and options
                 if ($param) {
                     $param = str_replace('&',' ',$param).' '.$options;
                 } else {
@@ -204,7 +207,7 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
                 }
                 $opts = $this->_getMediaProps($param);
 
-
+                // adjust linking option
                 list($ext, $mime) = mimetype($src, false);
                 if (substr($mime, 0, 5) == 'image') {
                     // force "linkonly"
@@ -297,7 +300,7 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
 
             // modify attributes if we need to open the link in a new window
             if (preg_match('/^window\b/',$attrs['target'])) {
-                $opts = $parser->getArguments($attrs['target']);
+                $opts = $this->_getMediaProps($attrs['target']);
 
                 $attrs['target'] = 'window';
                 $attrs['class'] .= ($attrs['class'] ? ' ' : '').'openwindow';

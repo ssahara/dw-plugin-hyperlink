@@ -89,6 +89,21 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
         return $type;
     }
 
+    /**
+     * get link properties
+     *
+     * @param  (string) $query
+     * @return (array)
+     */
+    protected function _getLinkProps($query) {
+        $attrs = array();
+
+        // load prameter parser utility
+        $parser = $this->loadHelper('hyperlink_parser');
+        $attrs = $parser->getArguments($query);
+
+        return $attrs;
+    }
 
     /**
      * handle syntax
@@ -107,23 +122,28 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                     $str = substr($match, 2);
                     $text = false;
                 }
-                $str = str_replace("\t",' ', trim($str));
+                $str = str_replace("\t",' ', $str);
 
-                // separate id and params; note: id could be a phrase
+                // separate id and options; note: id could be a phrase
                 $matches = explode(' ', $str);
+                $id = $options = '';
                 $appendTo = 'id';
                 foreach ($matches as $part) {
                     if (($appendTo == 'id' ) && (strpos($part, '="') !== false)) {
-                        $appendTo = 'params';
+                        $appendTo = 'options';
                     }
-                    ${$appendTo}.= (${$appendTo} ? ' ' : '') . $part;
+                    ${$appendTo}.= (${$appendTo}) ? ' ' : '';
+                    ${$appendTo}.= $part ;
                 }
 
                 // check which kind of link
+                $id = trim($id);
                 $call = $this->_getLinkType($id);
 
-                $data = array($call, $id, $params, $text);
+                // parse options
+                $opts = $this->_getLinkProps($options);
 
+                $data = array($call, $id, $opts, $text);
                 $this->link_data = $data;
 
                 // intercept calls
@@ -164,7 +184,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
         if ($state !== DOKU_LEXER_EXIT) return true;
 
         /* Entry data */
-        list($call, $id, $params, $text) = $link_data;
+        list($call, $id, $opts, $text) = $link_data;
 
         /* 
          * generate html of link anchor
@@ -200,14 +220,12 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
         // get open tag of anchor
         $html = strstr($output, '>', true).'>';
 
-        if ($params) {
-            // load prameter parser utility
-            $parser = $this->loadHelper('hyperlink_parser');
-            $attrs = $parser->getArguments($params);
+        if ($opts) {
+            $attrs = $opts;
 
             // modify attributes if we need to open the link in a new window
             if (preg_match('/^window\b/',$attrs['target'])) {
-                $opts = $parser->getArguments($attrs['target']);
+                $opts = $this->_getLinkProps($attrs['target']);
 
                 $attrs['target'] = 'window';
                 $attrs['class'] .= ($attrs['class'] ? ' ' : '').'openwindow';
