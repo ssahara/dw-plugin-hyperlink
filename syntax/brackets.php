@@ -23,6 +23,7 @@ if (!defined('DOKU_INC')) die();
 class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
 
     protected $mode;
+    protected $parser = null; // helper/parser.php
     protected $link_data;
     protected $highlighter = array('<span class="curid">','</span>');
 
@@ -90,21 +91,23 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
     }
 
     /**
-     * get link properties
+     * get link attributes
      *
      * @param  (string) $query
      * @return (array)
      */
-    protected function _getLinkProps($query) {
+    protected function _getLinkAttributes($query) {
         $attrs = array();
 
         // load prameter parser utility
-        $parser = $this->loadHelper('hyperlink_parser');
-        $attrs = $parser->getArguments($query);
+        if (is_null($this->parser)) {
+            $this->parser = $this->loadHelper('hyperlink_parser');
+        }
+        $attrs = $this->parser->getArguments($query);
 
         // modify target attributes if we need to open the link in a new window
         if (preg_match('/^window\b/', $attrs['target'])) {
-            $opts = $parser->getArguments($attrs['target']);
+            $opts = $this->parser->getArguments($attrs['target']);
 
             $attrs['target'] = 'window';
             $attrs['class'] .= ($attrs['class'] ? ' ' : '').'openwindow';
@@ -153,9 +156,10 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                 // check which kind of link
                 $id = trim($id);
                 $call = $this->_getLinkType($id);
+                $opts = array();
 
-                // parse options
-                $opts = $this->_getLinkProps($options);
+                // parse link options
+                $opts += $this->_getLinkAttributes($options);
 
                 $data = array($call, $id, $opts, $text);
                 $this->link_data = $data;
