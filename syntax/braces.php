@@ -5,14 +5,15 @@
  * @license GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author  Satoshi Sahara <sahara.satoshi@gmail.com>
  *
+ *  - force linkonly for media
  *  - allow anchor text formatting (formattable link text)
  *  - optional target parameter of links
  *    such as "_blank", "_self", "window 800x600"
  *
  * SYNTAX:
- *    {{ns:image.png target="_blank" | **bold text** }}        internal media
- *    {{doku>interwiki.jpg target="_blank" | text }}           interwiki
- *    {{http://exaple.com/sample.pdf target="_self"| text}}    external url
+ *    !{{ns:image.png target="_blank" | **bold text** }}        internal media
+ *    !{{doku>interwiki.jpg target="_blank" | text }}           interwiki
+ *    !{{http://exaple.com/sample.pdf target="_self"| text}}    external url
  *    
  */
 
@@ -28,11 +29,6 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
 
     // pattern 1 will match page link with title text
     // pattern 2 will match page link without title text
-/*
-    protected $entry_pattern1 = '\{\{[^\|\n]*?\|(?=.*?\}\}(?!\}))';
-    protected $entry_pattern2 = '\{\{[^\n]*?(?=\}\}(?!\}))';
-    protected $exit_pattern   = '\}\}(?!\})';
-*/
     protected $entry_pattern1 = '!\{\{[^\|\n]*?\|(?=.*?\}\}(?!\}))';
     protected $entry_pattern2 = '!\{\{[^\n]*?(?=\}\}(?!\}))';
     protected $exit_pattern   = '\}\}(?!\})';
@@ -310,8 +306,8 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
         $html = strstr($output, '>', true).'>';
 
         // optional attributes
-        foreach ($attrs as $attr => $value) {
-            // restrict effective attributs
+        foreach ($opts as $attr => $value) {
+            // restrict effective attributes
             if (!in_array($attr, array('class','target','title','onclick'))) {
                 continue;
             }
