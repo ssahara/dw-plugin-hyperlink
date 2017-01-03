@@ -327,9 +327,6 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
         }
 
         // open anchor tag <a>
-        if ($curid) {
-            $html = $this->highlighter[0].$html;
-        }
         $renderer->doc.= $html;
 
         // render "unmatched" parts as link text
@@ -370,10 +367,6 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
 
         // close </a>
         $html = '</a>';
-        if ($curid) {
-            $html = $html.$this->highlighter[1];
-            unset($curid);
-        }
         $renderer->doc.= $html;
         return true;
     }
