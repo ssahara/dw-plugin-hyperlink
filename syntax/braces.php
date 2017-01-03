@@ -30,9 +30,9 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
 
     // pattern 1 will match page link with title text
     // pattern 2 will match page link without title text
-    protected $entry_pattern1 = '!\{\{[^\|\n]*?\|(?=.*?\}\}(?!\}))';
-    protected $entry_pattern2 = '!\{\{[^\n]*?(?=\}\}(?!\}))';
-    protected $exit_pattern   = '\}\}(?!\})';
+    protected $entry_pattern1 = '!\{\{[^\|\n]*?\|(?=.*?\}\})';
+    protected $entry_pattern2 = '!\{\{[^\n]*?(?=\}\})';
+    protected $exit_pattern   = '\}\}';
 
 
     function __construct() {
@@ -296,21 +296,20 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
          * generate html of link anchor
          * see relevant functions in inc/parser/xhtml.php file
          */
+        $title = null;
         switch ($call) {
             case 'interwikimedia':
                 list($shortcut, $reference) = explode('>', $src, 2);
                 $exists = null;
                 $src = $renderer->_resolveInterWiki($shortcut, $reference, $exists);
             case 'externalmedia':
-                $output = $renderer->externalmedia($src,
-                            'TITLE',
+                $output = $renderer->externalmedia($src, $title,
                             $opts['align'], $opts['width'], $opts['height'],
                             $opts['cache'], $opts['linking'], true
                 );
                 break;
             case 'internalmedia':
-                $output = $renderer->internalmedia($src,
-                            'TITLE',
+                $output = $renderer->internalmedia($src, $title,
                             $opts['align'], $opts['width'], $opts['height'],
                             $opts['cache'], $opts['linking'], true
                 );
