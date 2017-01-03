@@ -29,11 +29,8 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
 
     // "\[\[(?:(?:[^[\]]*?\[.*?\])|.*?)\]\]"
 
-    // pattern 1 will match page link with title text
-    // pattern 2 will match page link without title text
-    protected $entry_pattern1 = '\[\[[^\|\n]*?\|(?=.*?\]\](?!\]))';
-    protected $entry_pattern2 = '\[\[[^\n]*?(?=\]\](?!\]))';
-    protected $exit_pattern   = '\]\](?!\])';
+    protected $entry_pattern = '\[\[[^\|\n]+?(?:\|(?=.*?\]\])|(?=\]\]))';
+    protected $exit_pattern  = '\]\]';
 
     function __construct() {
         $this->mode = substr(get_class($this), 7);
@@ -49,8 +46,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
      * Connect pattern to lexer
      */
     function connectTo($mode) {
-        $this->Lexer->addEntryPattern($this->entry_pattern1, $mode, $this->mode);
-        $this->Lexer->addEntryPattern($this->entry_pattern2, $mode, $this->mode);
+        $this->Lexer->addEntryPattern($this->entry_pattern, $mode, $this->mode);
     }
     function postConnect() {
         $this->Lexer->addExitPattern($this->exit_pattern, $this->mode);
