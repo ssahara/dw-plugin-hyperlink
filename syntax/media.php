@@ -22,11 +22,13 @@ class syntax_plugin_hyperlink_media extends DokuWiki_Syntax_Plugin {
 
         // @see class Doku_Parser_Mode_media in inc/parser/parser.php
         //$this->patterns[] = "\{\{[^\}]+\}\}";
-        //$this->patterns[] = '\{\{.+?\}\}';
 
-        // ignore single "}" and check "}}" allowing nested "{...}"
-        $nest = str_repeat('(?>[^\{\}\n]+|\{', 3).str_repeat('\})*', 3);
-        $this->patterns[] = '\{\{'.$nest.'\}\}';
+        //allowing nested "{...}" using regex atomic grouping
+        $content = str_repeat('(?>[^\{\}\n]+|\{', 3).str_repeat('\})*', 3);
+        $this->patterns[] = '\{\{'.$content.'\}\}';
+
+        // ignore single "}" and check closing "}}"
+        $this->patterns[] = '\{\{.+?\}\}';
     }
 
     function getType()  { return 'substition'; }
