@@ -205,7 +205,6 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
                     if (($appendTo == 'id' ) && (strpos($part, '="') !== false)) {
                         $appendTo = 'options';
                     }
-                    //${$appendTo}.= $part ?: ' ';
                     ${$appendTo}.= (${$appendTo}) ? ' ' : '';
                     ${$appendTo}.= $part ;
                 }
