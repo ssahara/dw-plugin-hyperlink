@@ -1,36 +1,34 @@
 <?php
 /**
- * DokuWiki Plugin HyperLink; Syntax brackets
+ * DokuWiki Plugin HyperLink; Syntax braces {{...}}
  *
  * @license GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author  Satoshi Sahara <sahara.satoshi@gmail.com>
  *
+ *  - force linkonly for media
  *  - allow anchor text formatting (formattable link text)
  *  - optional target parameter of links
  *    such as "_blank", "_self", "window 800x600"
  *
  * SYNTAX:
- *    [[id target="_blank" | **bold text** ]]          internal page
- *    [[doku>interwiki target="_blank" | text ]]       interwiki
- *    [[http://exaple.com target="_self" | text ]]     external url
- *    [[foo@example.com|contact **me**!]]              mail link
- *
+ *    !{{ns:image.png target="_blank" | **bold text** }}        internal media
+ *    !{{doku>interwiki.jpg target="_blank" | text }}           interwiki
+ *    !{{http://exaple.com/sample.pdf target="_self"| text}}    external url
+ *    
  */
 
 // must be run within Dokuwiki
 if (!defined('DOKU_INC')) die();
 
-class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
+class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
 
     protected $mode;
     protected $parser = null; // helper/parser.php
     protected $link_data;
-    protected $highlighter = array('<span class="curid">','</span>');
 
-    // "\[\[(?:(?:[^[\]]*?\[.*?\])|.*?)\]\]"
+    protected $entry_pattern = '!\{\{[^|\n]*?(?:\|(?=.*?\}\})|(?=\}\}))';
+    protected $exit_pattern  = '\}\}';
 
-    protected $entry_pattern = '\[\[[^\|\n]+?(?:\|(?=.*?\]\])|(?=\]\]))';
-    protected $exit_pattern  = '\]\]';
 
     function __construct() {
         $this->mode = substr(get_class($this), 7);
@@ -40,7 +38,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
     function getType()  { return 'formatting'; }
     function getAllowedTypes() { return array('formatting', 'substition', 'disabled'); }
     function getPType() { return 'normal'; }
-    function getSort()  { return 298; } // < Doku_Parser_Mode_internallink(=300)
+    function getSort()  { return 318; } // < Doku_Parser_Mode_media(=320)
 
     /**
      * Connect pattern to lexer
@@ -54,36 +52,92 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
 
 
     /**
-     * decide which kind of link it is
-     * @see function internallink() in inc/parser/handler.php
+     * decide which kind of media it is
+     * @see function media_isexternal() in inc/media.php
+     * @see function Doku_Handler_Parse_Media() in inc/parser/handler.php
      */
-    protected function _getLinkType($id) {
+    protected function _getMediaType($id) {
 
-        $link = array($id);
-
-        if ( preg_match('#^/{1,2}#', $link[0]) ) {
-            // path from DocumentRoot or schemaless urls
-            $type = 'baselink';
-        } elseif ( preg_match('/^[a-zA-Z0-9\.]+>/',$link[0]) ) {
-            // Interwiki
-            $type = 'interwikilink';
-        } elseif ( preg_match('/^\\\\\\\\[^\\\\]+?\\\\/u',$link[0]) ) {
-            // Windows Share
-            $type = 'windowssharelink';
-        } elseif ( preg_match('#^([a-z0-9\-\.+]+?)://#i',$link[0]) ) {
-            // external link (accepts all protocols)
-            $type = 'externallink';
-        } elseif ( preg_match('<'.PREG_PATTERN_VALID_EMAIL.'>',$link[0]) ) {
-            // E-Mail (pattern above is defined in inc/mail.php)
-            $type = 'emaillink';
-        } elseif ( preg_match('!^#.+!',$link[0]) ) {
-            // local link
-            $type = 'locallink';
+        if ( preg_match('#^(?:https?|ftp)://#i', $id) ) {
+            $type = 'externalmedia';
+        } elseif ( preg_match('/^[a-zA-Z0-9\.]+>/',$id) ) {
+            $type = 'interwikimedia';
         } else {
-            // internal link
-            $type = 'internallink';
+            $type = 'internalmedia';
         }
         return $type;
+    }
+
+    /**
+     * get media alignment
+     * @see function Doku_Handler_Parse_Media() in inc/parser/handler.php
+     */
+    protected function _getMediaAlignment($id) {
+                // Check alignment
+                // {{ns:image.png?50 target="_blank"| title}}   normal
+                // {{ns:image.png?50  target="_blank"| title}}  left-align
+                // {{ ns:image.png?50  target="_blank"| title}} center
+                // {{ ns:image.png?50 target="_blank"| title}}  right-align
+
+        $ralign = (substr($id,0,1) == ' ') ? true : false;
+        $lalign = (substr($id, -1) == ' ') ? true : false;
+
+        if ( $lalign & $ralign ) {
+            $align = 'center';
+        } elseif ( $ralign ) {
+            $align = 'right';
+        } elseif ( $lalign ) {
+            $align = 'left';
+        } else {
+            $align = null;
+        }
+        return $align;
+    }
+
+    /**
+     * get media properties
+     * @see function Doku_Handler_Parse_Media() in inc/parser/handler.php
+     *
+     * @param  (string) $query
+     * @return (array)
+     */
+    protected function _getMediaProps($query) {
+        $attrs = array();
+        $query = str_replace('&',' ', $query);
+
+        // load prameter parser utility
+        if (is_null($this->parser)) {
+            $this->parser = $this->loadHelper('hyperlink_parser');
+        }
+        $attrs = $this->parser->getArguments($query);
+
+        //parse width and height
+        if (!isset($attrs['width']) && isset($attrs['size'])) {
+            $attrs['width'] = $attrs['size'];
+            unset($attrs['size']);
+        }
+
+        //get linking command
+        if (@$attrs['link'] == false) {
+            $linking = 'nolink';
+        } elseif (@$attrs['direct']) {
+            $linking = 'direct';
+        } elseif (@$attrs['linkeonly']) {
+            $linking = 'linkonly';
+        } else {
+            $linking = 'details';
+        }
+        $attrs['linking'] = $linking;
+
+        //get caching command
+        if (preg_match('/(nocache|recache)/i',$query,$cachemode)) {
+            $cache = $cachemode[1];
+        } else {
+            $cache = 'cache';
+        }
+        $attrs['cache'] = $cache;
+
+        return $attrs;
     }
 
     /**
@@ -128,16 +182,16 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                 // see how link text should be rendered
                 if (substr($match, -1) == '|') {
                     // matched entry_pattern1
-                    $str = substr($match, 2, -1);
+                    $str = substr($match, 3, -1);
                     $text = null;  // link text is not necessary
                 } else {
                     // matched entry_pattern2, we must render link text
-                    $str = substr($match, 2);
+                    $str = substr($match, 3);
                     $text = false;
                 }
                 $str = str_replace("\t",' ', $str);
 
-                // separate id and options; note: id could be a phrase
+                // separate id and options
                 $matches = explode(' ', $str);
                 $id = $options = '';
                 $appendTo = 'id';
@@ -149,15 +203,46 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
                     ${$appendTo}.= $part ;
                 }
 
-                // check which kind of link
+                // Check alignment of id
+                $align = $this->_getMediaAlignment($id);
+
+                // remove aligning spaces
                 $id = trim($id);
-                $call = $this->_getLinkType($id);
+
+                // split into src and parameters (using the very last questionmark)
+                if (($p = strrpos($id, '?')) !== false) {
+                    $src   = substr($id, 0, $p);
+                    $param = substr($id, $p+1); // drop '?'
+                } else {
+                    $src   = $id;
+                    $param = '';
+                }
+
+                // Check whether this is a local or remote image
+                $call = $this->_getMediaType($src);
                 $opts = array();
+
+                // parse param
+                $param = str_replace('&',' ',$param);
+                $opts += $this->_getMediaProps($param);
+
+                // adjust media linking parameter
+                list($ext, $mime) = mimetype($src, false);
+                if (substr($mime, 0, 5) == 'image') {
+                    // force "linkonly"
+                    $opts['linking'] = 'linkonly';
+                } elseif ($mime == 'application/x-shockwave-flash') {
+                    $opts['linking'] = 'linkonly';
+                } elseif (media_supportedav($mime)) {
+                    $opts['linking'] = 'linkonly';
+                } else {
+                    unset($opts['linking']);
+                }
 
                 // parse link options
                 $opts += $this->_getLinkAttributes($options);
 
-                $data = array($call, $id, $opts, $text);
+                $data = array($call, $src, $opts, $text);
                 $this->link_data = $data;
 
                 // intercept calls
@@ -198,33 +283,30 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
         if ($state !== DOKU_LEXER_EXIT) return true;
 
         /* Entry data */
-        list($call, $id, $opts, $text) = $link_data;
+        list($call, $src, $opts, $text) = $link_data;
+
 
         /* 
          * generate html of link anchor
          * see relevant functions in inc/parser/xhtml.php file
          */
+        $title = null;
         switch ($call) {
-            case 'locallink':
-            case 'externallink':
-            case 'windowssharelink':
-            case 'emaillink':
-                $output = $renderer->$call($id, $name, true);
+            case 'interwikimedia':
+                list($shortcut, $reference) = explode('>', $src, 2);
+                $exists = null;
+                $src = $renderer->_resolveInterWiki($shortcut, $reference, $exists);
+            case 'externalmedia':
+                $output = $renderer->externalmedia($src, $title,
+                            $opts['align'], $opts['width'], $opts['height'],
+                            $opts['cache'], $opts['linking'], true
+                );
                 break;
-            case 'internallink':
-                $output = $renderer->$call($id, $name, $search, true, 'content');
-                // remove span tag for current pagename highlight,
-                // use $curid to see whether current pagename wrap is necessary
-                $output = str_replace($this->highlighter, '', $output, $curid);
-                break;
-            case 'interwikilink':
-                list($wikiName, $wikiUri) = explode('>', $id, 2);
-                $wikiName = strtolower($wikiName);
-                $output = $renderer->$call($id, $name, $wikiName, $wikiUri, true);
-                break;
-            case 'baselink':
-                // path from DocumentRoot or schemaless urls
-                $output = '<a href="'.$id.'" title="'.hsc($id).'">'.hsc($id).'</a>';
+            case 'internalmedia':
+                $output = $renderer->internalmedia($src, $title,
+                            $opts['align'], $opts['width'], $opts['height'],
+                            $opts['cache'], $opts['linking'], true
+                );
                 break;
             default:
                 // dummy output
@@ -236,7 +318,7 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
 
         // optional attributes
         foreach ($opts as $attr => $value) {
-            // restrict effective attributs
+            // restrict effective attributes
             if (!in_array($attr, array('class','target','title','onclick'))) {
                 continue;
             }
@@ -245,9 +327,6 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
         }
 
         // open anchor tag <a>
-        if ($curid) {
-            $html = $this->highlighter[0].$html;
-        }
         $renderer->doc.= $html;
 
         // render "unmatched" parts as link text
@@ -288,10 +367,6 @@ class syntax_plugin_hyperlink_brackets extends DokuWiki_Syntax_Plugin {
 
         // close </a>
         $html = '</a>';
-        if ($curid) {
-            $html = $html.$this->highlighter[1];
-            unset($curid);
-        }
         $renderer->doc.= $html;
         return true;
     }
