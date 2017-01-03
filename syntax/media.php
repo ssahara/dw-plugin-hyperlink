@@ -24,7 +24,8 @@ class syntax_plugin_hyperlink_media extends DokuWiki_Syntax_Plugin {
         //$this->patterns[] = "\{\{[^\}]+\}\}";
 
         //allowing nested "{...}" using regex atomic grouping
-        $content = str_repeat('(?>[^\{\}\n]+|\{', 3).str_repeat('\})*', 3);
+        $n = 3; // max nest level
+        $content = str_repeat('(?>[^\{\}\n]+|\{', $n).str_repeat('\})*', $n);
         $this->patterns[] = '\{\{'.$content.'\}\}';
 
         // ignore single "}" and check closing "}}"
