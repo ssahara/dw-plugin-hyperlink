@@ -26,7 +26,7 @@ class syntax_plugin_hyperlink_braces extends DokuWiki_Syntax_Plugin {
     protected $parser = null; // helper/parser.php
     protected $link_data;
 
-    protected $entry_pattern = '!\{\{[^|\n]*?(?:\|(?=.*?\}\})|(?=\}\}))';
+    protected $entry_pattern = '!\{\{[^|\n]+?(?:\|(?=.*?\}\})|(?=\}\}))';
     protected $exit_pattern  = '\}\}';
 
 
