@@ -44,7 +44,9 @@ class syntax_plugin_hyperlink_external extends DokuWiki_Syntax_Plugin {
         // external urls, supportng IDN
         $schemes = getSchemes();
         foreach ( $schemes as $scheme ) {
-            $this->patterns[] = '\b(?i)'.$scheme.'(?-i)://'.'\S+(?=]])';
+            // url match should not go beyond "<", "]]" and "}}]"
+            $this->patterns[] = '\b(?i)'.$scheme.'(?-i)://'.'\S+?(?=<|>)';
+            $this->patterns[] = '\b(?i)'.$scheme.'(?-i)://'.'\S+?(?=]]|}})';
             $this->patterns[] = '\b(?i)'.$scheme.'(?-i)://'.'\S+';
         }
     }
