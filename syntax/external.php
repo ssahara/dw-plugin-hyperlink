@@ -68,14 +68,14 @@ class syntax_plugin_hyperlink_external extends DokuWiki_Syntax_Plugin {
      * handle syntax
      */
     function handle($match, $state, $pos, Doku_Handler $handler) {
-        $url = strtolower($match);
+        $url = $match;
 
         // add protocol on simple short URLs
-        if (substr($url,0,4) == 'ftp.') {
+        if (strtolower(substr($url,0,4)) == 'ftp.') {
             $title = $match;
             $url = 'ftp://'. $url;
         }
-        if (substr($url,0,4) == 'www.') {
+        if (strtolower(substr($url,0,4)) == 'www.') {
             $title = $match;
             $url = 'http://'. $url;
         }
